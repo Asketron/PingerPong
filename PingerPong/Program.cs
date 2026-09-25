@@ -17,6 +17,7 @@ public class Block
     public int x2;
     public int y1;
     public int y2;
+    public int HP;
 }
 
 public class JepsiPepsi
@@ -25,19 +26,20 @@ public class JepsiPepsi
     List<Block> blocks = new List<Block>();
     
     int xKant = 148;
-    int yKant = 40;
+    int yKant = 42;
     int batLængde = 10;
     bool igang = false;
     float batPos = -1;
     int batSpeed = 1;
-    float ballspeed = 0.3f;
+    float ballspeed = 0.6f;
 
     bool ballRunning = false;
 
-    int blockX = 2;
+    int blockX = 2 * 2;
     int blockY = 8;
-    int blockNumX = 3;
+    int blockNumX = 10;
     int blockNumY = 5;
+    int blockHealth = 1;
 
     // yKant = 40, default
     // xKant = 148, default
@@ -80,7 +82,7 @@ public class JepsiPepsi
             ballAng = rnd.Next(280, 360);
         }
 
-        GetBlocks(jepsi.blockX, jepsi.blockY, jepsi.blockNumX, jepsi.blockNumY, jepsi.xKant, ref jepsi.blocks);
+        GetBlocks(jepsi.blockX, jepsi.blockY, jepsi.blockNumX, jepsi.blockNumY, jepsi.xKant, jepsi.blockHealth, ref jepsi.blocks);
         MakeBlocks(jepsi.blocks);
         double x = 0;
         double y = 0;
@@ -92,16 +94,40 @@ public class JepsiPepsi
 
             BallBounce(jepsi.xKant / 20, (int)(jepsi.batPos - jepsi.batLængde / 2) - 1, jepsi.xKant / 20 + 1, (int)(jepsi.batPos + jepsi.batLængde / 2) + 1, ref ballAng, ref ballx, ref bally, ref hit);
 
+            int hitBlock = 0;
+            for (int i = 0; i < jepsi.blocks.Count; i++)
+            {
+                if (hit == false)
+                {
+                    BallBounce(jepsi.blocks[i].x1, jepsi.blocks[i].y1, jepsi.blocks[i].x2, jepsi.blocks[i].y2, ref ballAng, ref ballx, ref bally, ref hit);
+                    if (hit == true)
+                    {
+                        jepsi.blocks[i].HP -= 1;
+                        if (jepsi.blocks[i].HP <= 0)
+                        {
+                            BlockRemove(i, jepsi.blocks);
+                            jepsi.blocks.RemoveAt(i);
+                        }
+
+                    }
+                }
+
+                
+                
+            }
+
             if (hit == true)
             {
                 y = 0;
                 x = 0;
+
             }
 
 
             if (1 >= ballx || jepsi.xKant - 3 <= ballx)//´´_
             {
-                ballAng = (180f - ballAng + 360f) % 360f;
+                int i = rnd.Next(-3, 3);
+                ballAng = (180f - ballAng + 360f) % 360f + i;
                 y = 0;
                 x = 0;
                 if (1 >= ballx)
@@ -121,7 +147,8 @@ public class JepsiPepsi
 
             if (1 >= bally || jepsi.yKant - 3 <= bally) //´´|
             {
-                ballAng = (360 - ballAng) % 360;
+                int i = rnd.Next(-3, 3);
+                ballAng = (360 - ballAng) % 360 + i;
 
                 y = 0;
                 x = 0;
@@ -135,25 +162,30 @@ public class JepsiPepsi
                 }
             }
 
-            double radians = ballAng * Math.PI / 180.0;
+         
 
-            x += Math.Cos(radians) * jepsi.ballspeed;
+            if (jepsi.ballRunning == true)
+            {
+                double radians = ballAng * Math.PI / 180.0;
 
-            y += Math.Sin(radians) * jepsi.ballspeed;
+                x += Math.Cos(radians) * jepsi.ballspeed;
 
-            ballx += (int)Math.Round(x);
-            bally += (int)Math.Round(y);
+                y += Math.Sin(radians) * jepsi.ballspeed;
 
-
-
-            y -= (int)Math.Round(y);
-            x -= (int)Math.Round(x);
-
+                ballx += (int)Math.Round(x);
+                bally += (int)Math.Round(y);
 
 
-            balls(ballx, bally, lastX, lastY, jepsi.xKant, jepsi.yKant);
-            lastY = bally;
-            lastX = ballx;
+
+                y -= (int)Math.Round(y);
+                x -= (int)Math.Round(x);
+
+                balls(ballx, bally, lastX, lastY, jepsi.xKant, jepsi.yKant);
+
+                lastY = bally;
+                lastX = ballx;
+            }
+            
 
 
 
@@ -200,7 +232,18 @@ public class JepsiPepsi
                     }
 
                     PlayerBat(jepsi.xKant, (int)Math.Round(jepsi.batPos) * 2, jepsi.batLængde, i);
+                }else if (key.Key == ConsoleKey.Spacebar)
+                {
+                    if (jepsi.ballRunning == false)
+                    {
+                        jepsi.ballRunning = true;
+                    }
+                    else
+                    {
+                        jepsi.ballRunning = false;
+                    }
                 }
+
 
                 
             }
@@ -355,31 +398,100 @@ public class JepsiPepsi
         }
     }
 
-    public static void GetBlocks(int blockX, int blockY, int blockNumX, int blockNumY, int xKant, ref List<Block> blocks)
+    public static void GetBlocks(int blockX, int blockY, int blockNumX, int blockNumY, int xKant, int health, ref List<Block> blocks)
     {
         for (int i = 0; i < blockNumX; i++)
         {
-            for (int o = 0; o < blockNumY; i++)
+            for (int o = 0; o < blockNumY; o++)
             {
                 blocks.Add(new Block()
                 {
-                    x1 = xKant - blockX - blockX * i,
-                    x2 = xKant - blockX * i,
+                    x1 = xKant - blockX - blockX * i - 1,
+                    x2 = xKant - blockX * i - 1,
                     y1 = o * blockY + 1,
-                    y2 = o * blockY + blockY + 1
+                    y2 = o * blockY + blockY + 1,
+                    HP = health
 
                 });
-
+                
             }
-
-
-
+            
 
         }
     }
 
     public static void MakeBlocks(List<Block> blocks)
     {
+        for (int o = 0; o < blocks.Count; o++)
+        {
+            Console.SetCursorPosition(blocks[o].x1, blocks[o].y1);
+
+            //top linje
+            Console.Write("┌");
+            for (int i = 0; i < blocks[o].x2 - blocks[o].x1 - 2; i++)
+            {
+                Console.Write("─");
+            }
+            Console.Write("┐");
+            //Midten
+            for (int i = 0; i < blocks[o].y2 - blocks[o].y1 - 2; i++)
+            {
+                Console.SetCursorPosition(blocks[o].x1, blocks[o].y1 + i + 1);
+                Console.Write("│");
+
+                for (int p = 0; p < blocks[o].x2 - blocks[o].x1 - 2; p++)
+                {
+                    Console.Write(" ");
+                }
+                Console.Write("│");
+            }
+            // Bunden linje
+            Console.SetCursorPosition(blocks[o].x1, blocks[o].y1 + blocks[o].y2 - blocks[o].y1 - 1);
+            Console.Write("└");
+            for (int i = 0; i < blocks[o].x2 - blocks[o].x1 - 2; i++)
+            {
+                Console.Write("─");
+            }
+            Console.Write("┘");
+            
+
+        }
+
+
+
+
+    }
+    public static void BlockRemove(int o, List<Block> blocks)
+    {
+        Console.SetCursorPosition(blocks[o].x1, blocks[o].y1);
+
+        //top linje
+        Console.Write(" ");
+        for (int i = 0; i < blocks[o].x2 - blocks[o].x1 - 2; i++)
+        {
+            Console.Write(" ");
+        }
+        Console.Write(" ");
+        //Midten
+        for (int i = 0; i < blocks[o].y2 - blocks[o].y1 - 2; i++)
+        {
+            Console.SetCursorPosition(blocks[o].x1, blocks[o].y1 + i + 1);
+            Console.Write(" ");
+
+            for (int p = 0; p < blocks[o].x2 - blocks[o].x1 - 2; p++)
+            {
+                Console.Write(" ");
+            }
+            Console.Write(" ");
+        }
+        // Bunden linje
+        Console.SetCursorPosition(blocks[o].x1, blocks[o].y1 + blocks[o].y2 - blocks[o].y1 - 1);
+        Console.Write(" ");
+        for (int i = 0; i < blocks[o].x2 - blocks[o].x1 - 2; i++)
+        {
+            Console.Write(" ");
+        }
+        Console.Write(" ");
 
     }
 
